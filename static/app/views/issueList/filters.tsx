@@ -11,9 +11,7 @@ import IssueListSearchBar from './searchBar';
 import {TagValueLoader} from './types';
 
 type Props = {
-  isSearchDisabled: boolean;
   onSearch: (query: string) => void;
-  onSidebarToggle: () => void;
   organization: Organization;
   query: string;
   savedSearch: SavedSearch;
@@ -26,9 +24,7 @@ function IssueListFilters({
   organization,
   savedSearch,
   query,
-  isSearchDisabled,
   sort,
-  onSidebarToggle,
   onSearch,
   tagValueLoader,
   tags,
@@ -45,12 +41,10 @@ function IssueListFilters({
         query={query || ''}
         sort={sort}
         onSearch={onSearch}
-        disabled={isSearchDisabled}
         excludedTags={['environment']}
         supportedTags={tags}
         tagValueLoader={tagValueLoader}
         savedSearch={savedSearch}
-        onSidebarToggle={onSidebarToggle}
       />
     </SearchContainer>
   );

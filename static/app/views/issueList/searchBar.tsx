@@ -27,7 +27,6 @@ const getSupportedTags = (supportedTags: TagCollection) =>
   );
 
 interface Props extends React.ComponentProps<typeof SmartSearchBar>, WithRouterProps {
-  onSidebarToggle: () => void;
   sort: string;
   supportedTags: TagCollection;
   tagValueLoader: TagValueLoader;
@@ -35,7 +34,6 @@ interface Props extends React.ComponentProps<typeof SmartSearchBar>, WithRouterP
 }
 
 function IssueListSearchBar({
-  onSidebarToggle: _onSidebarToggle,
   sort,
   supportedTags,
   tagValueLoader,
@@ -66,8 +64,6 @@ function IssueListSearchBar({
           sort,
           disabled: !organization.access.includes('org:write'),
         }),
-        // TODO: fully remove this
-        // makeSearchBuilderAction({onSidebarToggle}),
       ]}
       {...props}
       maxMenuHeight={500}

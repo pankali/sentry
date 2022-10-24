@@ -55,7 +55,6 @@ function IssuesSearchBarContainer({
           supportedTags={tags}
           placeholder={t('Search for issues, status, assigned, and more')}
           tagValueLoader={tagValueLoader}
-          onSidebarToggle={() => undefined}
           maxSearchItems={MAX_SEARCH_ITEMS}
           savedSearchType={SavedSearchType.ISSUE}
           dropdownClassName={css`
