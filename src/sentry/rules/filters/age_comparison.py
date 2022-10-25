@@ -59,9 +59,12 @@ class AgeComparisonFilter(EventFilter):
     label = "The issue is {comparison_type} than {value} {time}"
     prompt = "The issue is older or newer than..."
 
-    def _validate(self, comparison_type: str | None, time: str, value: str) -> int:
+    def _passes(self, first_seen: datetime) -> bool:
+        comparison_type = self.get_option("comparison_type")
+        time = self.get_option("time")
+
         try:
-            casted_value = int(value)
+            validated_value = int(self.get_option("value"))
         except (TypeError, ValueError):
             return False
 
@@ -75,42 +78,21 @@ class AgeComparisonFilter(EventFilter):
             )
         ):
             return False
-        return casted_value
 
-    def _compare(
-        self, first_seen: datetime, comparison_type: str | None, time: str, value: int
-    ) -> bool:
         _, delta_time = timeranges[time]
-        if comparison_type is None:
-            return False
-        # type cast to bool to satisfy mypy
-        return bool(
-            age_comparison_map[comparison_type](first_seen + (value * delta_time), timezone.now())
+
+        passes_: bool = age_comparison_map[comparison_type](
+            first_seen + (validated_value * delta_time), timezone.now()
         )
+        return passes_
 
     def passes(self, event: GroupEvent, state: EventState) -> bool:
-        comparison_type = self.get_option("comparison_type")
-        time = self.get_option("time")
-        value = self.get_option("value")
-
-        validated_value = self._validate(comparison_type, time, value)
-        if validated_value is False:
-            return False
-
-        return self._compare(event.group.first_seen, comparison_type, time, validated_value)
+        return self._passes(event.group.first_seen)
 
     def passes_activity(self, condition_activity: ConditionActivity) -> bool:
-        comparison_type = self.get_option("comparison_type")
-        time = self.get_option("time")
-        value = self.get_option("value")
-
-        validated_value = self._validate(comparison_type, time, value)
-        if validated_value is False:
-            return False
-
         try:
             group = Group.objects.get_from_cache(id=condition_activity.group_id)
         except Group.DoesNotExist:
             return False
 
-        return self._compare(group.first_seen, comparison_type, time, validated_value)
+        return self._passes(group.first_seen)
