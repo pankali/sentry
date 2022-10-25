@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import operator
-from datetime import timedelta
+from datetime import datetime, timedelta
 from typing import Sequence, Tuple
 
 from django import forms
@@ -9,6 +11,7 @@ from sentry.eventstore.models import GroupEvent
 from sentry.models import Group
 from sentry.rules import EventState
 from sentry.rules.filters.base import EventFilter
+from sentry.types.condition_activity import ConditionActivity
 
 
 class AgeComparisonType:
@@ -56,9 +59,9 @@ class AgeComparisonFilter(EventFilter):
     label = "The issue is {comparison_type} than {value} {time}"
     prompt = "The issue is older or newer than..."
 
-    def _validate(self, comparison_type, time, value):
+    def _validate(self, comparison_type: str | None, time: str, value: str) -> int:
         try:
-            value = int(value)
+            casted_value = int(value)
         except (TypeError, ValueError):
             return False
 
@@ -72,12 +75,17 @@ class AgeComparisonFilter(EventFilter):
             )
         ):
             return False
-        return value
+        return casted_value
 
-    def _compare(self, first_seen, comparison_type, time, value):
+    def _compare(
+        self, first_seen: datetime, comparison_type: str | None, time: str, value: int
+    ) -> bool:
         _, delta_time = timeranges[time]
-        return age_comparison_map[comparison_type](
-            first_seen + (value * delta_time), timezone.now()
+        if comparison_type is None:
+            return False
+        # type cast to bool to satisfy mypy
+        return bool(
+            age_comparison_map[comparison_type](first_seen + (value * delta_time), timezone.now())
         )
 
     def passes(self, event: GroupEvent, state: EventState) -> bool:
@@ -85,19 +93,19 @@ class AgeComparisonFilter(EventFilter):
         time = self.get_option("time")
         value = self.get_option("value")
 
-        value = self._validate(comparison_type, time, value)
-        if value is False:
+        validated_value = self._validate(comparison_type, time, value)
+        if validated_value is False:
             return False
 
-        return self._compare(event.group.first_seen, comparison_type, time, value)
+        return self._compare(event.group.first_seen, comparison_type, time, validated_value)
 
-    def passes_activity(self, condition_activity):
+    def passes_activity(self, condition_activity: ConditionActivity) -> bool:
         comparison_type = self.get_option("comparison_type")
         time = self.get_option("time")
         value = self.get_option("value")
 
-        value = self._validate(comparison_type, time, value)
-        if value is False:
+        validated_value = self._validate(comparison_type, time, value)
+        if validated_value is False:
             return False
 
         try:
@@ -105,4 +113,4 @@ class AgeComparisonFilter(EventFilter):
         except Group.DoesNotExist:
             return False
 
-        return self._compare(group.first_seen, comparison_type, time, value)
+        return self._compare(group.first_seen, comparison_type, time, validated_value)

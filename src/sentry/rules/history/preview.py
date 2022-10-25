@@ -56,7 +56,9 @@ def preview(
             return None
         filter_objects.append(filter_cls(project, data=filter))
 
-    filter_match = get_match_function(filter_match)
+    filter_func = get_match_function(filter_match)
+    if filter_func is None:
+        return None
 
     frequency = timedelta(minutes=frequency_minutes)
     last_fire = start - frequency
@@ -66,7 +68,7 @@ def preview(
             passes = [f.passes_activity(event) for f in filter_objects]
         except NotImplementedError:
             return None
-        if last_fire <= event.timestamp - frequency and filter_match(passes):
+        if last_fire <= event.timestamp - frequency and filter_func(passes):
             group_ids.add(event.group_id)
             last_fire = event.timestamp
 

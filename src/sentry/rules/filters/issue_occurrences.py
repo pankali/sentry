@@ -28,7 +28,7 @@ class IssueOccurrencesFilter(EventFilter):
         # This value is slightly delayed due to us batching writes to times_seen. We attempt to work
         # around this by including pending updates from buffers to improve accuracy.
         issue_occurrences: int = event.group.times_seen_with_pending
-        return issue_occurrences >= value
+        return bool(issue_occurrences >= value)
 
     def passes_activity(self, condition_activity: ConditionActivity) -> bool:
         try:
@@ -43,7 +43,7 @@ class IssueOccurrencesFilter(EventFilter):
 
         now = timezone.now()
         if now == group.first_seen:
-            return group.times_seen >= value
+            return bool(group.times_seen >= value)
         # assumes uniform distribution of error occurrences between first_seen and now
         guess = (
             (condition_activity.timestamp - group.first_seen)
@@ -51,4 +51,4 @@ class IssueOccurrencesFilter(EventFilter):
             * group.times_seen
         )
 
-        return guess >= value
+        return bool(guess >= value)

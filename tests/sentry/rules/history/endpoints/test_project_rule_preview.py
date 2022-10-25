@@ -55,6 +55,7 @@ class ProjectRulePreviewEndpointTest(APITestCase):
     def test_invalid_filters(self):
         invalid_filter = [{"id": "sentry.rules.filters.latest_release.LatestReleaseFilter"}]
         condition = [{"id": "sentry.rules.conditions.first_seen_event.FirstSeenEventCondition"}]
+        Group.objects.create(project=self.project, first_seen=timezone.now() - timedelta(hours=1))
         resp = self.get_response(
             self.organization.slug,
             self.project.slug,
