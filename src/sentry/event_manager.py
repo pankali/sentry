@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from datetime import datetime, timedelta
 from hashlib import md5
 from io import BytesIO
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, TypedDict
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Tuple, TypedDict
 
 import sentry_sdk
 from django.conf import settings
@@ -2131,7 +2131,7 @@ class PerformanceJob(TypedDict, total=False):
 
 def _save_grouphash_and_group(
     project: Project, event: Event, new_grouphash: str, **group_kwargs
-) -> Group:
+) -> Tuple[Group, bool]:
     group = None
     with transaction.atomic():
         group_hash, created = GroupHash.objects.get_or_create(project=project, hash=new_grouphash)
@@ -2145,7 +2145,7 @@ def _save_grouphash_and_group(
         # Group, we can guarantee that the Group will exist at this point and
         # fetch it via GroupHash
         group = Group.objects.get(grouphash__project=project, grouphash__hash=new_grouphash)
-    return group
+    return group, created
 
 
 @metrics.wraps("save_event.save_aggregate_performance")
@@ -2229,11 +2229,10 @@ def _save_aggregate_performance(jobs: Sequence[PerformanceJob], projects):
                             group_kwargs["data"]["metadata"], problem
                         )
 
-                        group = _save_grouphash_and_group(
+                        group, is_new = _save_grouphash_and_group(
                             project, event, new_grouphash, **group_kwargs
                         )
 
-                        is_new = True
                         is_regression = False
 
                         span.set_tag("create_group_transaction.outcome", "new_group")
