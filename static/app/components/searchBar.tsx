@@ -1,4 +1,4 @@
-import {useCallback, useRef, useState} from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import isPropValid from '@emotion/is-prop-valid';
 import styled from '@emotion/styled';
 
@@ -29,6 +29,14 @@ function SearchBar({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const [query, setQuery] = useState(queryProp ?? defaultQuery);
+
+  // if query prop keeps changing we should treat this as
+  // a controlled component and its internal state should be in sync
+  useEffect(() => {
+    if (typeof queryProp === 'string') {
+      setQuery(queryProp);
+    }
+  }, [queryProp]);
 
   const onQueryChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
